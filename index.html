@@ -1,482 +1,481 @@
-1|<!DOCTYPE html>
-2|<html lang="he" dir="rtl">
-3|<head>
-4|<meta charset="UTF-8">
-5|<meta name="viewport" content="width=device-width, initial-scale=1.0">
-6|<title>Windil – תרשים גאנט פרויקטים</title>
-7|<style>
-8|*{margin:0;padding:0;box-sizing:border-box}
-9|body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:#0d2137;direction:rtl;height:100vh;overflow:hidden}
-10|.app{display:flex;flex-direction:column;height:100vh;background:#fff}
-11|
-12|/* ── Header ── */
-13|.hdr{background:linear-gradient(135deg,#0a3a52,#1565a8);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:16px}
-14|.hdr h1{font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;white-space:nowrap}
-15|.badges{display:flex;gap:8px;flex-wrap:wrap}
-16|.badge{background:rgba(255,255,255,.18);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;white-space:nowrap}
-17|.badge.saved{background:rgba(46,204,113,.35);color:#aff5c8}
-18|
-19|/* ── Filters ── */
-20|.filters{background:#f0f4f8;border-bottom:2px solid #dde;padding:9px 20px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;flex-shrink:0}
-21|.fg{display:flex;align-items:center;gap:7px}
-22|.fg label{font-size:11px;font-weight:700;color:#445;white-space:nowrap}
-23|.fg select,.fg input{padding:5px 10px;border:1px solid #bcc;border-radius:6px;font-size:12px;background:#fff;color:#333;direction:rtl}
-24|.fg input{width:150px}
-25|.legend{display:flex;gap:12px;margin-right:auto;flex-wrap:wrap}
-26|.li{display:flex;align-items:center;gap:5px;font-size:11px;color:#556}
-27|.ld{width:13px;height:13px;border-radius:3px}
-28|
-29|/* ── Main ── */
-30|.main{display:flex;flex:1;overflow:hidden}
-31|
-32|/* ── Left panel ── */
-33|.lp{width:290px;flex-shrink:0;border-left:2px solid #dde;background:#fafbfc;overflow-y:auto;overflow-x:hidden}
-34|.lp-hdr{background:#e0e6ed;padding:8px 12px;font-size:11px;font-weight:700;color:#334;border-bottom:1px solid #ccd;position:sticky;top:0;z-index:5;display:flex;justify-content:space-between}
-35|.lp-row{display:flex;align-items:center;padding:0 8px;border-bottom:1px solid #eef;cursor:pointer;user-select:none;transition:background .15s}
-36|.lp-row:hover{background:#e8eef5}
-37|.lp-row.proj{height:44px;background:#f4f6fa;font-weight:700;font-size:12px;color:#223}
-38|.lp-row.proj:hover{background:#dde4ee}
-39|.lp-row.task{height:30px;font-size:11px;color:#445;padding-right:20px;background:#fff}
-40|.lp-row.task:hover{background:#f0f4ff}
-41|.expand-btn{font-size:14px;margin-left:6px;color:#778;transition:transform .2s}
-42|.expand-btn.open{transform:rotate(90deg)}
-43|.pct-bar{height:4px;border-radius:2px;background:#e0e4ea;margin-top:3px;overflow:hidden}
-44|.pct-fill{height:100%;border-radius:2px;background:#2ecc71;transition:width .3s}
-45|.task-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-left:6px}
-46|.done-dot{background:#27ae60}
-47|.pend-dot{background:#bbb}
-48|
-49|/* ── Gantt area ── */
-50|.ga-wrap{flex:1;overflow:auto;position:relative}
-51|#ga{position:relative;min-height:100%}
-52|#tlhdr{position:sticky;top:0;z-index:10;background:#e0e6ed;border-bottom:2px solid #ccd;display:flex;height:48px}
-53|.month-cell{display:inline-flex;flex-direction:column;justify-content:center;align-items:center;border-left:2px solid #bbc;font-size:11px;color:#334;font-weight:700;flex-shrink:0}
-54|.mname{font-size:12px}
-55|.mdays{font-size:10px;color:#778;font-weight:400}
-56|#gi{position:relative}
-57|.g-row{position:relative;border-bottom:1px solid #eef;background:#fff;display:flex;align-items:center}
-58|.g-row.proj{height:44px;background:#f8f9fc}
-59|.g-row.task{height:30px}
-60|.gl{position:absolute;top:0;bottom:0;width:1px;background:rgba(0,0,0,.06);pointer-events:none}
-61|.gl-m{background:rgba(0,0,0,.15);width:2px}
-62|.today-line{position:absolute;top:0;bottom:0;width:2px;background:#e74c3c;z-index:8;pointer-events:none}
-63|.today-label{position:absolute;top:0;background:#e74c3c;color:#fff;font-size:10px;padding:1px 5px;border-radius:0 0 4px 4px;z-index:9;white-space:nowrap}
-64|.bar{position:absolute;border-radius:5px;top:50%;transform:translateY(-50%);cursor:pointer;transition:opacity .15s;min-width:6px}
-65|.bar:hover{opacity:.85}
-66|.b-active{background:linear-gradient(90deg,#3498db,#2980b9)}
-67|.b-done{background:linear-gradient(90deg,#27ae60,#1e8449)}
-68|.b-overdue{background:linear-gradient(90deg,#e74c3c,#c0392b)}
-69|.b-pend{background:linear-gradient(90deg,#95a5a6,#7f8c8d)}
-70|.b-wait{background:linear-gradient(90deg,#f39c12,#d68910)}
-71|.b-cancel{background:linear-gradient(90deg,#bdc3c7,#95a5a6)}
-72|.proj .bar{height:22px}
-73|.task .bar{height:14px;border-radius:4px}
-74|.diamond{position:absolute;width:12px;height:12px;border-radius:2px;top:50%;transform:translateY(-50%) rotate(45deg);cursor:pointer;z-index:5;transition:opacity .15s}
-75|.diamond:hover{opacity:.75}
-76|
-77|/* ── Tooltip ── */
-78|#tip{position:fixed;background:#1a2a3a;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;z-index:9999;display:none;min-width:200px;max-width:280px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-79|.tt{font-weight:700;font-size:13px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:6px}
-80|.tr{display:flex;justify-content:space-between;gap:12px;margin:3px 0;font-size:11px}
-81|.tl{color:#aac;font-weight:600}
-82|</style>
-83|</head>
-84|<body>
-85|<div class="app">
-86|  <div class="hdr">
-87|    <h1>🌞 Windil – תרשים גאנט</h1>
-88|    <div class="badges">
-89|      <div class="badge" id="b-proj">—</div>
-90|      <div class="badge" id="b-tasks">—</div>
-91|      <div class="badge" id="b-date">עודכן 31/07/2026</div>
-92|      <div class="badge saved" id="b-save" style="display:none">✓ נשמר</div>
-93|    </div>
-94|  </div>
-95|
-96|  <div class="filters">
-97|    <div class="fg">
-98|      <label>מנהל:</label>
-99|      <select id="f-mgr"><option value="">הכל</option></select>
-100|    </div>
-101|    <div class="fg">
-102|      <label>סטטוס:</label>
-103|      <select id="f-status"><option value="">הכל</option></select>
-104|    </div>
-105|    <div class="fg">
-106|      <label>חיפוש:</label>
-107|      <input id="f-search" type="text" placeholder="שם פרויקט / לקוח…">
-108|    </div>
-109|    <div class="legend">
-110|      <div class="li"><div class="ld" style="background:#3498db"></div>פעיל</div>
-111|      <div class="li"><div class="ld" style="background:#27ae60"></div>הושלם</div>
-112|      <div class="li"><div class="ld" style="background:#e74c3c"></div>באיחור</div>
-113|      <div class="li"><div class="ld" style="background:#f39c12"></div>בהמתנה</div>
-114|      <div class="li"><div class="ld" style="background:#95a5a6"></div>ממתין</div>
-115|    </div>
-116|  </div>
-117|
-118|  <div class="main">
-119|    <div class="lp" id="lp">
-120|      <div class="lp-hdr">
-121|        <span>פרויקט / משימה</span><span>%</span>
-122|      </div>
-123|      <div id="lp-rows"></div>
-124|    </div>
-125|
-126|    <div class="ga-wrap">
-127|      <div id="ga">
-128|        <div id="tlhdr"></div>
-129|        <div id="gi">
-130|          <div id="g-rows"></div>
-131|        </div>
-132|      </div>
-133|    </div>
-134|  </div>
-135|</div>
-136|
-137|<div id="tip"></div>
-138|
-139|<script>
-140|const RAW = [{"id":"422","name":"בן עמוס / אליפלט","client":"בן עמוס","type":"מערכת מ 50-150KW AC","manager":"דן ריטוב","receivedDate":"22/07/2026","startDate":"22/07/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"421","name":"שגב מדמון / אופקים","client":"שגב מדמון","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"19/07/2026","startDate":"19/07/2026","endDate":"29/10/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"19/07/2026","endDate":"19/07/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"21/07/2026","endDate":"22/07/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"04/08/2026","endDate":"19/08/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName"... [truncated]
-141|
-142|const TODAY = new Date(); TODAY.setHours(0,0,0,0);
-143|const DW = 14; // pixels per day
-144|const LS_KEY = "windil_gantt_v2";
-145|
-146|// ── State ─────────────────────────────────────────────────────────────────────
-147|let expanded = new Set();
-148|let taskDone = {};
-149|
-150|function loadState() {
-151|  try {
-152|    const raw = localStorage.getItem(LS_KEY);
-153|    if (!raw) return;
-154|    const d = JSON.parse(raw);
-155|    if (d) {
-156|      if (Array.isArray(d.expanded)) expanded = new Set(d.expanded);
-157|      if (d.taskDone) taskDone = d.taskDone;
-158|    }
-159|  } catch(e) { console.warn('localStorage load failed, using empty state', e); }
-160|}
-161|let _saveTimer = null;
-162|function saveState() {
-163|  clearTimeout(_saveTimer);
-164|  _saveTimer = setTimeout(() => {
-165|    try {
-166|      localStorage.setItem(LS_KEY, JSON.stringify({
-167|        expanded: [...expanded],
-168|        taskDone,
-169|        updatedAt: new Date().toISOString()
-170|      }));
-171|      const badge = document.getElementById('b-save');
-172|      badge.style.display = '';
-173|      setTimeout(() => badge.style.display = 'none', 2000);
-174|    } catch(e) { console.warn('localStorage save failed', e); }
-175|  }, 400);
-176|}
-177|
-178|// ── Date helpers ──────────────────────────────────────────────────────────────
-179|function pd(s) {
-180|  if (!s) return null;
-181|  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-182|  if (!m) return null;
-183|  const dt = new Date(+m[3],+m[2]-1,+m[1]); dt.setHours(0,0,0,0);
-184|  return isNaN(dt)?null:dt;
-185|}
-186|function fd(d) { return d?d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'}):'—'; }
-187|function diff(a,b) { return Math.round((b-a)/86400000); }
-188|function dayOff(d) { return diff(minDate,d); }
-189|
-190|// ── Compute timeline ──────────────────────────────────────────────────────────
-191|let minDate=null, maxDate=null;
-192|RAW.forEach(p => {
-193|  [p.startDate,p.endDate,p.receivedDate].forEach(s => {
-194|    const d=pd(s); if(!d) return;
-195|    if(!minDate||d<minDate) minDate=d;
-196|    if(!maxDate||d>maxDate) maxDate=d;
-197|  });
-198|  p.tasks.forEach(t => {
-199|    [t.startDate,t.endDate].forEach(s => {
-200|      const d=pd(s); if(!d) return;
-201|      if(!minDate||d<minDate) minDate=d;
-202|      if(!maxDate||d>maxDate) maxDate=d;
-203|    });
-204|  });
-205|});
-206|minDate = new Date(Math.min(minDate||TODAY, TODAY) - 45*86400000); minDate.setHours(0,0,0,0);
-207|maxDate = new Date(Math.max(maxDate||TODAY, TODAY) + 60*86400000); maxDate.setHours(0,0,0,0);
-208|const TOTAL_DAYS = diff(minDate, maxDate);
-209|
-210|// ── Bar class ─────────────────────────────────────────────────────────────────
-211|function barCls(status, endDate) {
-212|  const ed=pd(endDate);
-213|  if (ed && ed<TODAY && status!=='הושלם' && status!=='בוטל') return 'b-overdue';
-214|  if (status==='הושלם') return 'b-done';
-215|  if (status==='בוטל') return 'b-cancel';
-216|  if (status==='ממתין לטיפול') return 'b-pend';
-217|  if (status==='בהמתנה') return 'b-wait';
-218|  return 'b-active';
-219|}
-220|function taskColor(done) {
-221|  return done ? '#27ae60' : '#5b8dd9';
-222|}
-223|
-224|function isTaskDone(projId, taskName, crmDone) {
-225|  const override = taskDone[projId]?.[taskName];
-226|  if (override !== undefined) return override;
-227|  return crmDone;
-228|}
-229|
-230|function toggleTask(projId, taskName, crmDone) {
-231|  if (!taskDone[projId]) taskDone[projId] = {};
-232|  const current = isTaskDone(projId, taskName, crmDone);
-233|  taskDone[projId][taskName] = !current;
-234|  saveState();
-235|  render();
-236|}
-237|
-238|// ── Tooltip ───────────────────────────────────────────────────────────────────
-239|let tipEl;
-240|function showTip(e, title, rows) {
-241|  if(!tipEl) tipEl=document.getElementById('tip');
-242|  const rowsHtml = rows.map(([l,v])=>`<div class="tr"><span class="tl">${l}</span><span>${v}</span></div>`).join('');
-243|  tipEl.innerHTML = `<div class="tt">${title}</div>${rowsHtml}`;
-244|  tipEl.style.display='block'; moveTip(e);
-245|}
-246|function moveTip(e) {
-247|  if(!tipEl) return;
-248|  tipEl.style.left=Math.min(e.clientX+15,window.innerWidth-290)+'px';
-249|  tipEl.style.top=Math.min(e.clientY+15,window.innerHeight-160)+'px';
-250|}
-251|function hideTip() { if(tipEl) tipEl.style.display='none'; }
-252|document.addEventListener('mousemove', moveTip);
-253|
-254|// ── Build header ──────────────────────────────────────────────────────────────
-255|function buildHeader() {
-256|  const hdr=document.getElementById('tlhdr');
-257|  const months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-258|  let cur=null, html='';
-259|  for(let i=0;i<=TOTAL_DAYS;i++){
-260|    const d=new Date(minDate.getTime()+i*86400000);
-261|    const key=d.getFullYear()*12+d.getMonth();
-262|    if(key!==cur){
-263|      let cnt=0; let j=i;
-264|      while(j<=TOTAL_DAYS){
-265|        const dd=new Date(minDate.getTime()+j*86400000);
-266|        if(dd.getFullYear()*12+dd.getMonth()!==key) break;
-267|        cnt++; j++;
-268|      }
-269|      const w=cnt*DW;
-270|      html+=`<div class="month-cell" style="width:${w}px;min-width:${w}px">
-271|        <span class="mname">${months[d.getMonth()]} ${d.getFullYear()}</span>
-272|        <span class="mdays">${cnt} ימים</span></div>`;
-273|      cur=key;
-274|    }
-275|  }
-276|  hdr.innerHTML=html;
-277|  hdr.style.width=(TOTAL_DAYS*DW)+'px';
-278|}
-279|
-280|// ── Build grid lines ───────────────────────────────────────────────────────────
-281|function buildGrid() {
-282|  const gi=document.getElementById('gi');
-283|  let html='';
-284|  for(let i=0;i<=TOTAL_DAYS;i++){
-285|    const d=new Date(minDate.getTime()+i*86400000);
-286|    if(d.getDate()===1) html+=`<div class="gl gl-m" style="left:${i*DW}px;top:48px"></div>`;
-287|    else if(d.getDay()===0) html+=`<div class="gl" style="left:${i*DW}px;top:48px"></div>`;
-288|  }
-289|  const g=document.createElement('div');
-290|  g.style.cssText='position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:1';
-291|  g.innerHTML=html; gi.appendChild(g);
-292|}
-293|
-294|// ── Build today line ───────────────────────────────────────────────────────────
-295|function buildToday() {
-296|  const gi=document.getElementById('gi');
-297|  const off=dayOff(TODAY)*DW;
-298|  const line=document.createElement('div');
-299|  line.className='today-line'; line.style.left=off+'px';
-300|  const lbl=document.createElement('div');
-301|  lbl.className='today-label'; lbl.style.left=(off-20)+'px';
-302|  lbl.textContent='היום';
-303|  gi.appendChild(line); gi.appendChild(lbl);
-304|}
-305|
-306|// ── Filters ────────────────────────────────────────────────────────────────────
-307|function initFilters() {
-308|  const mgrs=[...new Set(RAW.map(p=>p.manager).filter(Boolean))].sort();
-309|  const statuses=[...new Set(RAW.map(p=>p.status).filter(Boolean))].sort();
-310|  const mSel=document.getElementById('f-mgr');
-311|  mgrs.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; mSel.appendChild(o); });
-312|  const sSel=document.getElementById('f-status');
-313|  statuses.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sSel.appendChild(o); });
-314|  [mSel,sSel,document.getElementById('f-search')].forEach(el=>el.addEventListener('input',render));
-315|}
-316|
-317|function getFiltered() {
-318|  const mgr=document.getElementById('f-mgr').value;
-319|  const stat=document.getElementById('f-status').value;
-320|  const q=document.getElementById('f-search').value.trim().toLowerCase();
-321|  return RAW.filter(p=>
-322|    (!mgr||p.manager===mgr) &&
-323|    (!stat||p.status===stat) &&
-324|    (!q||(p.name+p.client).toLowerCase().includes(q))
-325|  );
-326|}
-327|
-328|// ── Render ─────────────────────────────────────────────────────────────────────
-329|const W = TOTAL_DAYS * DW;
-330|function render() {
-331|  const filtered = getFiltered();
-332|  const lpRows = document.getElementById('lp-rows');
-333|  const gRows  = document.getElementById('g-rows');
-334|  lpRows.innerHTML = '';
-335|  gRows.innerHTML  = '';
-336|
-337|  filtered.forEach(p => {
-338|    const isOpen = expanded.has(p.id);
-339|    const doneCnt = p.tasks.filter(t => isTaskDone(p.id, t.name, t.done)).length;
-340|    const pct = p.totalTasks ? Math.round(doneCnt/p.totalTasks*100) : 0;
-341|
-342|    // ── Left panel: project row ──
-343|    const lpr=document.createElement('div');
-344|    lpr.className='lp-row proj';
-345|    lpr.innerHTML=`
-346|      <span class="expand-btn ${isOpen?'open':''}">▶</span>
-347|      <div style="flex:1;overflow:hidden;margin-right:4px">
-348|        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.name}">${p.name}</div>
-349|        <div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div>
-350|      </div>
-351|      <span style="font-size:11px;color:#667;white-space:nowrap">${pct}%</span>`;
-352|    lpr.addEventListener('click',()=>{
-353|      if(expanded.has(p.id)) expanded.delete(p.id);
-354|      else expanded.add(p.id);
-355|      saveState(); render();
-356|    });
-357|    lpr.addEventListener('mouseenter',e=>showTip(e,p.name,[
-358|      ['לקוח',p.client||'—'],
-359|      ['מנהל',p.manager||'—'],
-360|      ['סוג',p.type||'—'],
-361|      ['סטטוס',p.status||'—'],
-362|      ['התקדמות',pct+'% ('+doneCnt+'/'+p.totalTasks+')'],
-363|      ['תחילה',p.startDate||p.receivedDate||'—'],
-364|      ['סיום',p.endDate||'—'],
-365|    ]));
-366|    lpr.addEventListener('mouseleave',hideTip);
-367|    lpRows.appendChild(lpr);
-368|
-369|    // ── Gantt: project bar ──
-370|    const gpr=document.createElement('div');
-371|    gpr.className='g-row proj';
-372|    gpr.style.width=W+'px';
-373|    const sd=pd(p.startDate), ed=pd(p.endDate);
-374|    if(sd && ed){
-375|      const left=dayOff(sd)*DW;
-376|      const width=Math.max((diff(sd,ed)+1)*DW, 6);
-377|      const cls=barCls(p.status, p.endDate);
-378|      const barEl=document.createElement('div');
-379|      barEl.className='bar '+cls;
-380|      barEl.style.cssText=`left:${left}px;width:${width}px`;
-381|      barEl.title=p.name;
-382|      barEl.addEventListener('mouseenter',e=>showTip(e,p.name,[
-383|        ['תחילה',fd(sd)],['סיום',fd(ed)],
-384|        ['ימים',diff(sd,ed)+1],['סטטוס',p.status||'—'],
-385|      ]));
-386|      barEl.addEventListener('mouseleave',hideTip);
-387|      gpr.appendChild(barEl);
-388|    }
-389|    gRows.appendChild(gpr);
-390|
-391|    // ── Task rows (if expanded) ──
-392|    if(isOpen){
-393|      p.tasks.forEach(t => {
-394|        const done=isTaskDone(p.id, t.name, t.done);
-395|
-396|        // Left panel task row
-397|        const tlr=document.createElement('div');
-398|        tlr.className='lp-row task';
-399|        tlr.innerHTML=`<div class="task-dot ${done?'done-dot':'pend-dot'}"></div>
-400|          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</span>
-401|          <span style="font-size:10px;color:#889;margin-right:4px">${done?'✓':''}</span>`;
-402|        tlr.style.cursor='pointer';
-403|        tlr.addEventListener('click',()=>toggleTask(p.id, t.name, t.done));
-404|        tlr.addEventListener('mouseenter',e=>showTip(e,t.name,[
-405|          ['פרויקט',p.name],
-406|          ['CRM',t.crmName||'—'],
-407|          ['תחילה',t.startDate||'—'],
-408|          ['סיום',t.endDate||'—'],
-409|          ['סטטוס',t.status||'—'],
-410|          ['מצב',done?'✅ בוצע':'⏳ ממתין'],
-411|        ]));
-412|        tlr.addEventListener('mouseleave',hideTip);
-413|        lpRows.appendChild(tlr);
-414|
-415|        // Gantt task row
-416|        const gtr=document.createElement('div');
-417|        gtr.className='g-row task';
-418|        gtr.style.width=W+'px';
-419|        const ts=pd(t.startDate), te=pd(t.endDate);
-420|        const color=taskColor(done);
-421|        if(ts && te){
-422|          const left=dayOff(ts)*DW;
-423|          const width=Math.max((diff(ts,te)+1)*DW, 4);
-424|          const tb=document.createElement('div');
-425|          tb.className='bar';
-426|          tb.style.cssText=`left:${left}px;width:${width}px;background:${color};height:14px`;
-427|          tb.addEventListener('click',()=>toggleTask(p.id, t.name, t.done));
-428|          tb.addEventListener('mouseenter',e=>showTip(e,t.name,[
-429|            ['תחילה',fd(ts)],['סיום',fd(te)],
-430|            ['ימים',diff(ts,te)+1],['מצב',done?'✅ בוצע':'⏳ ממתין'],
-431|          ]));
-432|          tb.addEventListener('mouseleave',hideTip);
-433|          gtr.appendChild(tb);
-434|        } else {
-435|          // No dates - show diamond on project start
-436|          const projStart=pd(p.startDate)||pd(p.receivedDate);
-437|          if(projStart){
-438|            const dm=document.createElement('div');
-439|            dm.className='diamond';
-440|            dm.style.cssText=`left:${dayOff(projStart)*DW-5}px;background:${done?'#27ae60':'#ccc'}`;
-441|            dm.title=t.name+(done?' ✓':' (ללא תאריך)');
-442|            dm.addEventListener('click',()=>toggleTask(p.id, t.name, t.done));
-443|            gtr.appendChild(dm);
-444|          }
-445|        }
-446|        gRows.appendChild(gtr);
-447|      });
-448|    }
-449|  });
-450|
-451|  document.getElementById('b-proj').textContent=filtered.length+' פרויקטים';
-452|  const tt=filtered.reduce((s,p)=>s+p.totalTasks,0);
-453|  document.getElementById('b-tasks').textContent=tt+' משימות';
-454|}
-455|
-456|// ── Sync scroll ───────────────────────────────────────────────────────────────
-457|function syncScroll(){
-458|  const lp=document.getElementById('lp'), ga=document.getElementById('ga');
-459|  ga.addEventListener('scroll',()=>{ lp.scrollTop=ga.scrollTop; });
-460|  lp.addEventListener('scroll',()=>{ ga.scrollTop=lp.scrollTop; });
-461|}
-462|
-463|// ── Init ──────────────────────────────────────────────────────────────────────
-464|async function init(){
-465|  loadState();
-466|  document.getElementById('b-date').textContent='היום: '+TODAY.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
-467|  buildHeader();
-468|  buildGrid();
-469|  buildToday();
-470|  initFilters();
-471|  syncScroll();
-472|  render();
-473|  document.getElementById('gi').style.width=(TOTAL_DAYS*DW)+'px';
-474|  setTimeout(()=>{
-475|    const ga=document.getElementById('ga');
-476|    ga.scrollLeft=Math.max(0,dayOff(TODAY)*DW-350);
-477|  },100);
-478|}
-479|document.addEventListener('DOMContentLoaded',init);
-480|</script>
-481|</body>
-482|
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windil – תרשים גאנט פרויקטים</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:#0d2137;direction:rtl;height:100vh;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;background:#fff}
+
+/* ── Header ── */
+.hdr{background:linear-gradient(135deg,#0a3a52,#1565a8);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:16px}
+.hdr h1{font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.18);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge.saved{background:rgba(46,204,113,.35);color:#aff5c8}
+
+/* ── Filters ── */
+.filters{background:#f0f4f8;border-bottom:2px solid #dde;padding:9px 20px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;flex-shrink:0}
+.fg{display:flex;align-items:center;gap:7px}
+.fg label{font-size:11px;font-weight:700;color:#445;white-space:nowrap}
+.fg select,.fg input{padding:5px 10px;border:1px solid #bcc;border-radius:6px;font-size:12px;background:#fff;color:#333;direction:rtl}
+.fg input{width:150px}
+.legend{display:flex;gap:12px;margin-right:auto;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:#556}
+.ld{width:13px;height:13px;border-radius:3px}
+
+/* ── Main ── */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ── Left panel ── */
+.lp{width:290px;flex-shrink:0;border-left:2px solid #dde;background:#fafbfc;overflow-y:auto;overflow-x:hidden}
+.lp-hdr{background:#e0e6ed;padding:8px 12px;font-size:11px;font-weight:700;color:#334;border-bottom:1px solid #ccd;position:sticky;top:0;z-index:5;display:flex;justify-content:space-between}
+.lp-row{display:flex;align-items:center;padding:0 8px;border-bottom:1px solid #eef;cursor:pointer;user-select:none;transition:background .15s}
+.lp-row:hover{background:#e8eef5}
+.lp-row.proj{height:44px;background:#f4f6fa;font-weight:700;font-size:12px;color:#223}
+.lp-row.proj:hover{background:#dde4ee}
+.lp-row.task{height:30px;font-size:11px;color:#445;padding-right:20px;background:#fff}
+.lp-row.task:hover{background:#f0f4ff}
+.expand-btn{font-size:14px;margin-left:6px;color:#778;transition:transform .2s}
+.expand-btn.open{transform:rotate(90deg)}
+.pct-bar{height:4px;border-radius:2px;background:#e0e4ea;margin-top:3px;overflow:hidden}
+.pct-fill{height:100%;border-radius:2px;background:#2ecc71;transition:width .3s}
+.task-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-left:6px}
+.done-dot{background:#27ae60}
+.pend-dot{background:#bbb}
+
+/* ── Gantt area ── */
+.ga-wrap{flex:1;overflow:auto;position:relative}
+#ga{position:relative;min-height:100%}
+#tlhdr{position:sticky;top:0;z-index:10;background:#e0e6ed;border-bottom:2px solid #ccd;display:flex;height:48px}
+.month-cell{display:inline-flex;flex-direction:column;justify-content:center;align-items:center;border-left:2px solid #bbc;font-size:11px;color:#334;font-weight:700;flex-shrink:0}
+.mname{font-size:12px}
+.mdays{font-size:10px;color:#778;font-weight:400}
+#gi{position:relative}
+.g-row{position:relative;border-bottom:1px solid #eef;background:#fff;display:flex;align-items:center}
+.g-row.proj{height:44px;background:#f8f9fc}
+.g-row.task{height:30px}
+.gl{position:absolute;top:0;bottom:0;width:1px;background:rgba(0,0,0,.06);pointer-events:none}
+.gl-m{background:rgba(0,0,0,.15);width:2px}
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:#e74c3c;z-index:8;pointer-events:none}
+.today-label{position:absolute;top:0;background:#e74c3c;color:#fff;font-size:10px;padding:1px 5px;border-radius:0 0 4px 4px;z-index:9;white-space:nowrap}
+.bar{position:absolute;border-radius:5px;top:50%;transform:translateY(-50%);cursor:pointer;transition:opacity .15s;min-width:6px}
+.bar:hover{opacity:.85}
+.b-active{background:linear-gradient(90deg,#3498db,#2980b9)}
+.b-done{background:linear-gradient(90deg,#27ae60,#1e8449)}
+.b-overdue{background:linear-gradient(90deg,#e74c3c,#c0392b)}
+.b-pend{background:linear-gradient(90deg,#95a5a6,#7f8c8d)}
+.b-wait{background:linear-gradient(90deg,#f39c12,#d68910)}
+.b-cancel{background:linear-gradient(90deg,#bdc3c7,#95a5a6)}
+.proj .bar{height:22px}
+.task .bar{height:14px;border-radius:4px}
+.diamond{position:absolute;width:12px;height:12px;border-radius:2px;top:50%;transform:translateY(-50%) rotate(45deg);cursor:pointer;z-index:5;transition:opacity .15s}
+.diamond:hover{opacity:.75}
+
+/* ── Tooltip ── */
+#tip{position:fixed;background:#1a2a3a;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;z-index:9999;display:none;min-width:200px;max-width:280px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.tt{font-weight:700;font-size:13px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:6px}
+.tr{display:flex;justify-content:space-between;gap:12px;margin:3px 0;font-size:11px}
+.tl{color:#aac;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <h1>🌞 Windil – תרשים גאנט</h1>
+    <div class="badges">
+      <div class="badge" id="b-proj">—</div>
+      <div class="badge" id="b-tasks">—</div>
+      <div class="badge" id="b-date">עודכן 31/07/2026</div>
+      <div class="badge saved" id="b-save" style="display:none">✓ נשמר</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="fg">
+      <label>מנהל:</label>
+      <select id="f-mgr"><option value="">הכל</option></select>
+    </div>
+    <div class="fg">
+      <label>סטטוס:</label>
+      <select id="f-status"><option value="">הכל</option></select>
+    </div>
+    <div class="fg">
+      <label>חיפוש:</label>
+      <input id="f-search" type="text" placeholder="שם פרויקט / לקוח…">
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#3498db"></div>פעיל</div>
+      <div class="li"><div class="ld" style="background:#27ae60"></div>הושלם</div>
+      <div class="li"><div class="ld" style="background:#e74c3c"></div>באיחור</div>
+      <div class="li"><div class="ld" style="background:#f39c12"></div>בהמתנה</div>
+      <div class="li"><div class="ld" style="background:#95a5a6"></div>ממתין</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="lp" id="lp">
+      <div class="lp-hdr">
+        <span>פרויקט / משימה</span><span>%</span>
+      </div>
+      <div id="lp-rows"></div>
+    </div>
+
+    <div class="ga-wrap">
+      <div id="ga">
+        <div id="tlhdr"></div>
+        <div id="gi">
+          <div id="g-rows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tip"></div>
+
+<script>
+const RAW = [{"id":"422","name":"בן עמוס / אליפלט","client":"בן עמוס","type":"מערכת מ 50-150KW AC","manager":"דן ריטוב","receivedDate":"22/07/2026","startDate":"22/07/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"421","name":"שגב מדמון / אופקים","client":"שגב מדמון","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"19/07/2026","startDate":"19/07/2026","endDate":"29/10/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"19/07/2026","endDate":"19/07/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"21/07/2026","endDate":"22/07/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"04/08/2026","endDate":"19/08/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"09/09/2026","endDate":"10/09/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"18/09/2026","endDate":"20/09/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"13/09/2026","endDate":"17/09/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"20/09/2026","endDate":"05/10/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"16/10/2026","endDate":"21/10/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"07/10/2026","endDate":"11/10/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"26/10/2026","endDate":"29/10/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"23/10/2026","endDate":"25/10/2026","status":"פעיל","done":false}]},{"id":"420","name":"אריה ולדמן/אופקים","client":"אריה ולדמן","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"12/07/2026","startDate":"12/07/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"419","name":"אפי שיווק ופרזול חגי בע\"מ","client":"שיווק ופרזול חגי בע\"מ","type":"מערכת מ 15-50KW AC","manager":"דן ריטוב","receivedDate":"09/07/2026","startDate":"09/07/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"418","name":"יצחק רסקין/כפר חב\"ד","client":"יצחק רסקין","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"07/07/2026","startDate":"07/07/2026","endDate":"26/10/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"10/07/2026","endDate":"10/07/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"חוזה + מקדמה","startDate":"08/07/2026","endDate":"08/07/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"הדמיה ותכנון מפורט","startDate":"19/07/2026","endDate":"19/07/2026","status":"פעיל","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"15/09/2026","endDate":"15/09/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת ציוד","startDate":"19/07/2026","endDate":"19/07/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום לפני עליה לגג","startDate":"07/07/2026","endDate":"","status":"פעיל","done":false},{"name":"התקנה","crmName":"בחירת קבלן והתקנה","startDate":"19/07/2026","endDate":"19/07/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"תיאום בדיקה וחיבור","startDate":"26/10/2026","endDate":"26/10/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"הגשה לחיבור חח\"י","startDate":"07/07/2026","endDate":"","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"חיבור ותשלום סופי","startDate":"05/08/2026","endDate":"05/08/2026","status":"פעיל","done":false}]},{"id":"417","name":"עוזי","client":"(1)","type":"מערכות אוף גריד","manager":"דן ריטוב","receivedDate":"05/07/2026","startDate":"05/07/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"416","name":"רון אהרון/אופקים","client":"רון אהרון","type":"מערכת עד 15KW AC","manager":"מור שם טוב","receivedDate":"30/06/2026","startDate":"30/06/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"415","name":"דימטרי טמנוב/אופקים","client":"דימטרי טמנוב","type":"מערכת עד 15KW AC","manager":"מור שם טוב","receivedDate":"30/06/2026","startDate":"30/06/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"414","name":"אלעד פטמן/אופקים","client":"אלעד פטמן","type":"מערכת עד 15KW AC","manager":"מור שם טוב","receivedDate":"30/06/2026","startDate":"30/06/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"413","name":"ישראל ירדני/אופקים","client":"ישראל ירדני","type":"מערכת עד 15KW AC","manager":"מור שם טוב","receivedDate":"30/06/2026","startDate":"30/06/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"412","name":"ישראל גולדברג/תוספת אגירה","client":"ישראל גולדברג","type":"התקנה","manager":"דן ריטוב","receivedDate":"22/06/2026","startDate":"22/06/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"411","name":"צבי מנרץ/כפר חב\"ד","client":"(1)","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"15/06/2026","startDate":"15/06/2026","endDate":"25/09/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"15/06/2026","endDate":"15/06/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"17/06/2026","endDate":"18/06/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"01/07/2026","endDate":"16/07/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"06/08/2026","endDate":"07/08/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"16/08/2026","endDate":"17/08/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"10/08/2026","endDate":"14/08/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"17/08/2026","endDate":"01/09/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"13/09/2026","endDate":"17/09/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"03/09/2026","endDate":"07/09/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"22/09/2026","endDate":"25/09/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"20/09/2026","endDate":"21/09/2026","status":"פעיל","done":false}]},{"id":"410","name":"אבנר יצהרי/הרצליה","client":"אבנר יצהרי","type":"מסלול ירוק - מערכת סולארית","manager":"אבי אלמגור","receivedDate":"09/06/2026","startDate":"09/06/2026","endDate":"20/09/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"09/06/2026","endDate":"09/06/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"11/06/2026","endDate":"12/06/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"25/06/2026","endDate":"10/07/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"תשלום שובר אישור - חח\"י","startDate":"09/06/2026","endDate":"","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"10/08/2026","endDate":"11/08/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"04/08/2026","endDate":"09/08/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"11/08/2026","endDate":"26/08/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"07/09/2026","endDate":"11/09/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"28/08/2026","endDate":"01/09/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"16/09/2026","endDate":"20/09/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"14/09/2026","endDate":"15/09/2026","status":"פעיל","done":false}]},{"id":"409","name":"אברהם יצחק אלימלך/יבניאל - מסלול ירוק עם אגירה","client":"אברהם יצחק אלימלך","type":"מסלול ירוק - מערכת סולארית","manager":"פזית אלבז","receivedDate":"31/05/2026","startDate":"31/05/2026","endDate":"10/09/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"31/05/2026","endDate":"31/05/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"02/06/2026","endDate":"03/06/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"16/06/2026","endDate":"01/07/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"22/07/2026","endDate":"23/07/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"31/07/2026","endDate":"02/08/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"26/07/2026","endDate":"30/07/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"02/08/2026","endDate":"17/08/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"28/08/2026","endDate":"02/09/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"19/08/2026","endDate":"23/08/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"07/09/2026","endDate":"10/09/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"04/09/2026","endDate":"06/09/2026","status":"פעיל","done":false}]},{"id":"408","name":"חני לביא /בני יהודה","client":"חני לביא","type":"מסלול ירוק - מערכת סולארית","manager":"אבי אלמגור","receivedDate":"12/05/2026","startDate":"12/05/2026","endDate":"23/08/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"12/05/2026","endDate":"12/05/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"14/05/2026","endDate":"15/05/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"28/05/2026","endDate":"12/06/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"03/07/2026","endDate":"05/07/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"13/07/2026","endDate":"14/07/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"07/07/2026","endDate":"12/07/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"14/07/2026","endDate":"29/07/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"10/08/2026","endDate":"14/08/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"31/07/2026","endDate":"04/08/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"19/08/2026","endDate":"23/08/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"17/08/2026","endDate":"18/08/2026","status":"פעיל","done":false}]},{"id":"407","name":"קוזנץ יצחק זאב/אופקים","client":"(1)","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"11/05/2026","startDate":"11/05/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"406","name":"יצחק אבקסיס - 14 פאנלים ומצברים","client":"(2)","type":"מערכות אוף גריד","manager":"דן ריטוב","receivedDate":"04/05/2026","startDate":"04/05/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"405","name":"מגאר - 6 פאנלים ומצברים","client":"(2)","type":"מערכות אוף גריד","manager":"דן ריטוב","receivedDate":"04/05/2026","startDate":"04/05/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"404","name":"מוחמד - כפר כאסם","client":"(1)","type":"מערכות אוף גריד","manager":"דן ריטוב","receivedDate":"04/05/2026","startDate":"04/05/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"403","name":"מארק סממה/הוד השרון","client":"מארק סממה","type":"מסלול ירוק - מערכת סולארית","manager":"מוטי ברטל","receivedDate":"20/04/2026","startDate":"20/04/2026","endDate":"31/07/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"20/04/2026","endDate":"20/04/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"22/04/2026","endDate":"23/04/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"06/05/2026","endDate":"21/05/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"11/06/2026","endDate":"12/06/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"21/06/2026","endDate":"22/06/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"15/06/2026","endDate":"19/06/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"22/06/2026","endDate":"07/07/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"19/07/2026","endDate":"23/07/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"09/07/2026","endDate":"13/07/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"28/07/2026","endDate":"31/07/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"26/07/2026","endDate":"27/07/2026","status":"פעיל","done":false}]},{"id":"402","name":"פינרגי - ארונות","client":"(1)","type":"התקנה","manager":"דן ריטוב","receivedDate":"15/04/2026","startDate":"15/04/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"401","name":"אילאיל שפירו רמת ישי/מסלול ירוק עם אגירה","client":"אילאיל שפירו","type":"מסלול ירוק - מערכת סולארית","manager":"מוטי ברטל","receivedDate":"14/04/2026","startDate":"14/04/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"400","name":"אוירבך - הוספת אגירה","client":"שמשון אויבך","type":"Off-Grid","manager":"דן ריטוב","receivedDate":"18/03/2026","startDate":"18/03/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"399","name":"ניצן לזכרם - החלפת מצברים","client":"(1)","type":"Off-Grid","manager":"דן ריטוב","receivedDate":"11/03/2026","startDate":"11/03/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"397","name":"אפל טאוור - סמארטקון","client":"(1)","type":"מסלול ירוק - מערכת סולארית","manager":"דן ריטוב","receivedDate":"11/03/2026","startDate":"11/03/2026","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"391","name":"אילן יהודה / בטחה","client":"אילן יהודה","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"26/02/2026","startDate":"26/02/2026","endDate":"09/06/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"26/02/2026","endDate":"26/02/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"01/03/2026","endDate":"02/03/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"15/03/2026","endDate":"30/03/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"20/04/2026","endDate":"21/04/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"29/04/2026","endDate":"30/04/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"23/04/2026","endDate":"28/04/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"30/04/2026","endDate":"15/05/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"27/05/2026","endDate":"01/06/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"18/05/2026","endDate":"21/05/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"05/06/2026","endDate":"09/06/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"03/06/2026","endDate":"04/06/2026","status":"פעיל","done":false}]},{"id":"390","name":"אלישע גרינגולד/מבועים ברקן","client":"אלישע יזמות ותנועה","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"11/02/2026","startDate":"11/02/2026","endDate":"25/05/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"11/02/2026","endDate":"11/02/2026","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"13/02/2026","endDate":"15/02/2026","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"27/02/2026","endDate":"15/03/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"05/04/2026","endDate":"06/04/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"14/04/2026","endDate":"15/04/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"08/04/2026","endDate":"13/04/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"15/04/2026","endDate":"30/04/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"12/05/2026","endDate":"17/05/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"03/05/2026","endDate":"06/05/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"21/05/2026","endDate":"25/05/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"19/05/2026","endDate":"20/05/2026","status":"פעיל","done":false}]},{"id":"389","name":"אדם מדאח / מספרת אדם","client":"אדם מדאח / מספרת אדם","type":"מערכות אוף גריד","manager":"דן ריטוב","receivedDate":"02/02/2026","startDate":"02/02/2026","endDate":"30/05/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"388","name":"IPN ENERGY","client":"איי.פי.אן - אנרג'י בע\"מ","type":"מערכות אוף גריד","manager":"דן ריטוב","receivedDate":"20/01/2026","startDate":"20/01/2026","endDate":"24/02/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"385","name":"מירי בויום / שמשית","client":"מירי בויום","type":"מסלול ירוק - מערכת סולארית","manager":"מוטי ברטל","receivedDate":"25/12/2025","startDate":"25/12/2025","endDate":"07/04/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"25/12/2025","endDate":"25/12/2025","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"28/12/2025","endDate":"29/12/2025","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"11/01/2026","endDate":"26/01/2026","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"16/02/2026","endDate":"17/02/2026","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"25/02/2026","endDate":"26/02/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"19/02/2026","endDate":"24/02/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"26/02/2026","endDate":"13/03/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"25/03/2026","endDate":"30/03/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"16/03/2026","endDate":"19/03/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"03/04/2026","endDate":"07/04/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"01/04/2026","endDate":"02/04/2026","status":"פעיל","done":false}]},{"id":"384","name":"עדירון המיטב לטף","client":"עדירון המיטב לטף בע\"מ","type":"מערכת מ 50-150KW AC","manager":"מוטי ברטל","receivedDate":"09/12/2025","startDate":"09/12/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"383","name":"ג'רבי יעקוב/בר יוחאי","client":"ג'רבי יעקוב","type":"מסלול ירוק - מערכת סולארית","manager":"מוטי ברטל","receivedDate":"30/11/2025","startDate":"30/11/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"381","name":"נתנאל רחמנוף / אופקים","client":"נתנאל רחמנוף","type":"מסלול ירוק - מערכת סולארית","manager":"מור שם טוב","receivedDate":"20/11/2025","startDate":"20/11/2025","endDate":"03/03/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"רישום באתר","startDate":"20/11/2025","endDate":"20/11/2025","status":"פעיל","done":false},{"name":"מקדמה","crmName":"מקדמה","startDate":"23/11/2025","endDate":"24/11/2025","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"07/12/2025","endDate":"22/12/2025","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"תשלום שובר אישור - חח\"י","startDate":"20/11/2025","endDate":"","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"21/01/2026","endDate":"22/01/2026","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"15/01/2026","endDate":"20/01/2026","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"22/01/2026","endDate":"06/02/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"18/02/2026","endDate":"23/02/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"09/02/2026","endDate":"12/02/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"27/02/2026","endDate":"03/03/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"25/02/2026","endDate":"26/02/2026","status":"פעיל","done":false}]},{"id":"380","name":"מיכאל גיטלין / אצ\"ל / לח\"י / שד' הרצל אופקים","client":"גיטלין מיכאל","type":"מערכת מ 15-50KW AC","manager":"מור שם טוב","receivedDate":"17/11/2025","startDate":"17/11/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"377","name":"שמשון אויבך / נתיבות","client":"שמשון אויבך","type":"מערכת מ 15-50KW AC","manager":"מור שם טוב","receivedDate":"28/10/2025","startDate":"28/10/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"376","name":"שמעון אגסי / אופקים","client":"שמעון אגסי","type":"מערכת מ 15-50KW AC","manager":"מור שם טוב","receivedDate":"28/10/2025","startDate":"28/10/2025","endDate":"08/02/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"13/11/2025","endDate":"28/11/2025","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"19/12/2025","endDate":"21/12/2025","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"29/12/2025","endDate":"30/12/2025","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"23/12/2025","endDate":"28/12/2025","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"30/12/2025","endDate":"14/01/2026","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"26/01/2026","endDate":"30/01/2026","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"16/01/2026","endDate":"20/01/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"04/02/2026","endDate":"08/02/2026","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"02/02/2026","endDate":"03/02/2026","status":"פעיל","done":false}]},{"id":"374","name":"ראובן הבר / ניר עקיבא","client":"ראובן הבר","type":"אסדרה תעריפית","manager":"דן ריטוב","receivedDate":"19/10/2025","startDate":"19/10/2025","endDate":"06/02/2026","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"הדמיה ותכנון מפורט","startDate":"30/10/2025","endDate":"30/10/2025","status":"פעיל","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"28/12/2025","endDate":"28/12/2025","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת ציוד","startDate":"30/10/2025","endDate":"30/10/2025","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום לפני עליה לגג","startDate":"19/10/2025","endDate":"","status":"פעיל","done":false},{"name":"התקנה","crmName":"בחירת קבלן והתקנה","startDate":"30/10/2025","endDate":"30/10/2025","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"תיאום בדיקה וחיבור","startDate":"06/02/2026","endDate":"06/02/2026","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"הגשה לחיבור חח\"י","startDate":"19/10/2025","endDate":"","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"חיבור ותשלום סופי","startDate":"17/11/2025","endDate":"17/11/2025","status":"פעיל","done":false}]},{"id":"373","name":"אייל איצקוביץ","client":"אייל איצקוביץ","type":"מערכת מ 15-50KW AC","manager":"דן ריטוב","receivedDate":"05/10/2025","startDate":"05/10/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"372","name":"אריאל פרומקין","client":"אריאל פרומקין","type":"אסדרה תעריפית","manager":"דן ריטוב","receivedDate":"31/08/2025","startDate":"31/08/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"371","name":"צביקה גיטלין","client":"נפתלי צבי יהודה גיטלין","type":"מערכת מ 15-50KW AC","manager":"מור שם טוב","receivedDate":"24/08/2025","startDate":"24/08/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"הדמיה ותכנון מפורט","startDate":"","endDate":"","status":"פעיל","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"","endDate":"","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת ציוד","startDate":"","endDate":"","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום לפני עליה לגג","startDate":"","endDate":"","status":"פעיל","done":false},{"name":"התקנה","crmName":"בחירת קבלן והתקנה","startDate":"","endDate":"","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"תיאום בדיקה וחיבור","startDate":"","endDate":"","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"הגשה לחיבור חח\"י","startDate":"","endDate":"","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"חיבור ותשלום סופי","startDate":"","endDate":"","status":"פעיל","done":false}]},{"id":"348","name":"סייף הגדלה","client":"דר' סייף ושות","type":"מערכות אוף גריד","manager":"מור שם טוב","receivedDate":"28/04/2025","startDate":"28/04/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"","endDate":"","status":"פעיל","done":false}]},{"id":"345","name":"מכולה 4","client":"אפקון תחבורה חשמלית בע\"מ","type":"מכירת ציד ויקטרון","manager":"מור שם טוב","receivedDate":"28/04/2025","startDate":"28/04/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"343","name":"זידאן עספיא","client":"זידאן עספיא","type":"מערכות אוף גריד","manager":"דן ריטוב","receivedDate":"26/02/2025","startDate":"26/02/2025","endDate":"01/04/2025","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"מקדמה + חתימת חוזה","startDate":"28/02/2025","endDate":"02/03/2025","status":"פעיל","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"סיור טכני והדמיה","startDate":"08/04/2025","endDate":"09/04/2025","status":"פעיל","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת ציוד","startDate":"13/03/2025","endDate":"28/03/2025","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"04/03/2025","endDate":"09/03/2025","status":"פעיל","done":false},{"name":"התקנה","crmName":"עליה לגג והתקנה","startDate":"13/03/2025","endDate":"14/03/2025","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"15/04/2025","endDate":"20/04/2025","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"הפעלת ראשונה של המערכת","startDate":"10/04/2025","endDate":"10/04/2025","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"17/03/2025","endDate":"18/03/2025","status":"פעיל","done":false}]},{"id":"341","name":"ש.נ. שיקום וניהול/שירלי גינסברג","client":"ש.נ. שיקום וניהול","type":"Off-Grid","manager":"מוטי ברטל","receivedDate":"28/01/2025","startDate":"28/01/2025","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"340","name":"נתיב אחר בחיים בע\"מ","client":"שירלי ויובל גינסבר","type":"מערכות אוף גריד","manager":"מוטי ברטל","receivedDate":"28/01/2025","startDate":"28/01/2025","endDate":"29/04/2025","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"13/02/2025","endDate":"28/02/2025","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"21/03/2025","endDate":"23/03/2025","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"08/04/2025","endDate":"29/04/2025","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"25/03/2025","endDate":"30/03/2025","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"01/04/2025","endDate":"16/04/2025","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"17/03/2025","endDate":"21/03/2025","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"הפעלת ראשונה של המערכת","startDate":"12/03/2025","endDate":"12/03/2025","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"07/04/2025","endDate":"08/04/2025","status":"פעיל","done":false}]},{"id":"336","name":"בית כנסת משכן אבנר","client":"עמותת משכן אבנר","type":"מערכת מ 15-50KW AC","manager":"מור שם טוב","receivedDate":"25/12/2024","startDate":"25/12/2024","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"312","name":"סייף מערכת גיבוי","client":"(1)","type":"Off-Grid","manager":"דוד זיו","receivedDate":"18/07/2024","startDate":"25/07/2024","endDate":"28/08/2024","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"296","name":"ק א אלון אנרגיה בע״מ","client":"(1)","type":"מערכות אוף גריד","manager":"דוד זיו","receivedDate":"27/05/2024","startDate":"05/06/2024","endDate":"27/08/2024","status":"ממתין לטיפול","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"21/06/2024","endDate":"07/07/2024","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"28/07/2024","endDate":"29/07/2024","status":"ממתין לטיפול","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"06/08/2024","endDate":"07/08/2024","status":"ממתין לטיפול","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"31/07/2024","endDate":"05/08/2024","status":"ממתין לטיפול","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"07/08/2024","endDate":"22/08/2024","status":"ממתין לטיפול","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"23/07/2024","endDate":"28/07/2024","status":"ממתין לטיפול","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"הפעלת ראשונה של המערכת","startDate":"18/07/2024","endDate":"18/07/2024","status":"ממתין לטיפול","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"13/08/2024","endDate":"14/08/2024","status":"פעיל","done":false}]},{"id":"294","name":"טל אשר/יוסף מילוא 2 א' תל אביב","client":"(1)","type":"מסלול ירוק - מערכת סולארית","manager":"דוד זיו","receivedDate":"23/05/2024","startDate":"23/06/2024","endDate":"23/07/2024","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"09/07/2024","endDate":"24/07/2024","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"תשלום שובר אישור - חח\"י","startDate":"23/06/2024","endDate":"23/07/2024","status":"פעיל","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"23/08/2024","endDate":"25/08/2024","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"18/08/2024","endDate":"22/08/2024","status":"פעיל","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"25/08/2024","endDate":"09/09/2024","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"20/09/2024","endDate":"25/09/2024","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"הזמנת בודק חח\"י","startDate":"24/09/2024","endDate":"02/10/2024","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"30/09/2024","endDate":"03/10/2024","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"27/09/2024","endDate":"29/09/2024","status":"פעיל","done":false}]},{"id":"288","name":"ל.ט השקעות ונכסים בע\"מ","client":"(2)","type":"Off-Grid","manager":"מוטי ברטל","receivedDate":"31/03/2024","startDate":"31/03/2024","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]},{"id":"247","name":"הגשר הרומי בע\"מ - חמדיה","client":"הגשר הרומי קצ'ה ובניו בע\"מ","type":"אסדרה תעריפית","manager":"דוד זיו","receivedDate":"19/03/2023","startDate":"19/03/2023","endDate":"30/11/2023","status":"ממתין לטיפול","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"הגשת טפסי רישום","startDate":"12/04/2023","endDate":"16/04/2023","status":"ממתין לטיפול","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"תיק לקוח","startDate":"17/12/2023","endDate":"01/01/2024","status":"פעיל","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"אישור התקנה","startDate":"10/05/2023","endDate":"11/05/2023","status":"ממתין לטיפול","done":false},{"name":"הזמנת ציוד","crmName":"הזמנת קונסטרוקציה","startDate":"19/05/2023","endDate":"21/05/2023","status":"פעיל","done":false},{"name":"תשלום 2","crmName":"תשלום שני","startDate":"14/05/2023","endDate":"18/05/2023","status":"ממתין לטיפול","done":false},{"name":"התקנה","crmName":"הרכבת קונסטרוקצייה","startDate":"21/05/2023","endDate":"05/06/2023","status":"פעיל","done":false},{"name":"תשלום 3","crmName":"תשלום שלישי","startDate":"16/06/2023","endDate":"21/06/2023","status":"פעיל","done":false},{"name":"בדיקה בודק","crmName":"בדיקה אמצעית","startDate":"07/06/2023","endDate":"11/06/2023","status":"פעיל","done":false},{"name":"חיבור חח\"י","crmName":"חיבור סופי לחח\"י","startDate":"26/06/2023","endDate":"29/06/2023","status":"פעיל","done":false},{"name":"תשלום 4","crmName":"תשלום רביעי","startDate":"23/06/2023","endDate":"25/06/2023","status":"פעיל","done":false}]},{"id":"236","name":"פטריות שפרעם","client":"פטריות מורדות הגולן בע\"מ","type":"מכירת ציד ויקטרון","manager":"דן ריטוב","receivedDate":"21/12/2022","startDate":"21/12/2022","endDate":"","status":"פעיל","doneCount":0,"totalTasks":12,"tasks":[{"name":"רישום באתר","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"מקדמה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"טפסים מהלקוח","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הדמיה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"אישור התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"הזמנת ציוד","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 2","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"התקנה","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 3","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"בדיקה בודק","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"חיבור חח\"י","crmName":"","startDate":"","endDate":"","status":"","done":false},{"name":"תשלום 4","crmName":"","startDate":"","endDate":"","status":"","done":false}]}];
+
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+const DW = 14; // pixels per day
+const LS_KEY = "windil_gantt_v2";
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let expanded = new Set();
+let taskDone = {};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d) {
+      if (Array.isArray(d.expanded)) expanded = new Set(d.expanded);
+      if (d.taskDone) taskDone = d.taskDone;
+    }
+  } catch(e) { console.warn('localStorage load failed, using empty state', e); }
+}
+let _saveTimer = null;
+function saveState() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        expanded: [...expanded],
+        taskDone,
+        updatedAt: new Date().toISOString()
+      }));
+      const badge = document.getElementById('b-save');
+      badge.style.display = '';
+      setTimeout(() => badge.style.display = 'none', 2000);
+    } catch(e) { console.warn('localStorage save failed', e); }
+  }, 400);
+}
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+function pd(s) {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const dt = new Date(+m[3],+m[2]-1,+m[1]); dt.setHours(0,0,0,0);
+  return isNaN(dt)?null:dt;
+}
+function fd(d) { return d?d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'}):'—'; }
+function diff(a,b) { return Math.round((b-a)/86400000); }
+function dayOff(d) { return diff(minDate,d); }
+
+// ── Compute timeline ──────────────────────────────────────────────────────────
+let minDate=null, maxDate=null;
+RAW.forEach(p => {
+  [p.startDate,p.endDate,p.receivedDate].forEach(s => {
+    const d=pd(s); if(!d) return;
+    if(!minDate||d<minDate) minDate=d;
+    if(!maxDate||d>maxDate) maxDate=d;
+  });
+  p.tasks.forEach(t => {
+    [t.startDate,t.endDate].forEach(s => {
+      const d=pd(s); if(!d) return;
+      if(!minDate||d<minDate) minDate=d;
+      if(!maxDate||d>maxDate) maxDate=d;
+    });
+  });
+});
+minDate = new Date(Math.min(minDate||TODAY, TODAY) - 45*86400000); minDate.setHours(0,0,0,0);
+maxDate = new Date(Math.max(maxDate||TODAY, TODAY) + 60*86400000); maxDate.setHours(0,0,0,0);
+const TOTAL_DAYS = diff(minDate, maxDate);
+
+// ── Bar class ─────────────────────────────────────────────────────────────────
+function barCls(status, endDate) {
+  const ed=pd(endDate);
+  if (ed && ed<TODAY && status!=='הושלם' && status!=='בוטל') return 'b-overdue';
+  if (status==='הושלם') return 'b-done';
+  if (status==='בוטל') return 'b-cancel';
+  if (status==='ממתין לטיפול') return 'b-pend';
+  if (status==='בהמתנה') return 'b-wait';
+  return 'b-active';
+}
+function taskColor(done) {
+  return done ? '#27ae60' : '#5b8dd9';
+}
+
+function isTaskDone(projId, taskName, crmDone) {
+  const override = taskDone[projId]?.[taskName];
+  if (override !== undefined) return override;
+  return crmDone;
+}
+
+function toggleTask(projId, taskName, crmDone) {
+  if (!taskDone[projId]) taskDone[projId] = {};
+  const current = isTaskDone(projId, taskName, crmDone);
+  taskDone[projId][taskName] = !current;
+  saveState();
+  render();
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+let tipEl;
+function showTip(e, title, rows) {
+  if(!tipEl) tipEl=document.getElementById('tip');
+  const rowsHtml = rows.map(([l,v])=>`<div class="tr"><span class="tl">${l}</span><span>${v}</span></div>`).join('');
+  tipEl.innerHTML = `<div class="tt">${title}</div>${rowsHtml}`;
+  tipEl.style.display='block'; moveTip(e);
+}
+function moveTip(e) {
+  if(!tipEl) return;
+  tipEl.style.left=Math.min(e.clientX+15,window.innerWidth-290)+'px';
+  tipEl.style.top=Math.min(e.clientY+15,window.innerHeight-160)+'px';
+}
+function hideTip() { if(tipEl) tipEl.style.display='none'; }
+document.addEventListener('mousemove', moveTip);
+
+// ── Build header ──────────────────────────────────────────────────────────────
+function buildHeader() {
+  const hdr=document.getElementById('tlhdr');
+  const months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  let cur=null, html='';
+  for(let i=0;i<=TOTAL_DAYS;i++){
+    const d=new Date(minDate.getTime()+i*86400000);
+    const key=d.getFullYear()*12+d.getMonth();
+    if(key!==cur){
+      let cnt=0; let j=i;
+      while(j<=TOTAL_DAYS){
+        const dd=new Date(minDate.getTime()+j*86400000);
+        if(dd.getFullYear()*12+dd.getMonth()!==key) break;
+        cnt++; j++;
+      }
+      const w=cnt*DW;
+      html+=`<div class="month-cell" style="width:${w}px;min-width:${w}px">
+        <span class="mname">${months[d.getMonth()]} ${d.getFullYear()}</span>
+        <span class="mdays">${cnt} ימים</span></div>`;
+      cur=key;
+    }
+  }
+  hdr.innerHTML=html;
+  hdr.style.width=(TOTAL_DAYS*DW)+'px';
+}
+
+// ── Build grid lines ───────────────────────────────────────────────────────────
+function buildGrid() {
+  const gi=document.getElementById('gi');
+  let html='';
+  for(let i=0;i<=TOTAL_DAYS;i++){
+    const d=new Date(minDate.getTime()+i*86400000);
+    if(d.getDate()===1) html+=`<div class="gl gl-m" style="left:${i*DW}px;top:48px"></div>`;
+    else if(d.getDay()===0) html+=`<div class="gl" style="left:${i*DW}px;top:48px"></div>`;
+  }
+  const g=document.createElement('div');
+  g.style.cssText='position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:1';
+  g.innerHTML=html; gi.appendChild(g);
+}
+
+// ── Build today line ───────────────────────────────────────────────────────────
+function buildToday() {
+  const gi=document.getElementById('gi');
+  const off=dayOff(TODAY)*DW;
+  const line=document.createElement('div');
+  line.className='today-line'; line.style.left=off+'px';
+  const lbl=document.createElement('div');
+  lbl.className='today-label'; lbl.style.left=(off-20)+'px';
+  lbl.textContent='היום';
+  gi.appendChild(line); gi.appendChild(lbl);
+}
+
+// ── Filters ────────────────────────────────────────────────────────────────────
+function initFilters() {
+  const mgrs=[...new Set(RAW.map(p=>p.manager).filter(Boolean))].sort();
+  const statuses=[...new Set(RAW.map(p=>p.status).filter(Boolean))].sort();
+  const mSel=document.getElementById('f-mgr');
+  mgrs.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; mSel.appendChild(o); });
+  const sSel=document.getElementById('f-status');
+  statuses.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sSel.appendChild(o); });
+  [mSel,sSel,document.getElementById('f-search')].forEach(el=>el.addEventListener('input',render));
+}
+
+function getFiltered() {
+  const mgr=document.getElementById('f-mgr').value;
+  const stat=document.getElementById('f-status').value;
+  const q=document.getElementById('f-search').value.trim().toLowerCase();
+  return RAW.filter(p=>
+    (!mgr||p.manager===mgr) &&
+    (!stat||p.status===stat) &&
+    (!q||(p.name+p.client).toLowerCase().includes(q))
+  );
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+const W = TOTAL_DAYS * DW;
+function render() {
+  const filtered = getFiltered();
+  const lpRows = document.getElementById('lp-rows');
+  const gRows  = document.getElementById('g-rows');
+  lpRows.innerHTML = '';
+  gRows.innerHTML  = '';
+
+  filtered.forEach(p => {
+    const isOpen = expanded.has(p.id);
+    const doneCnt = p.tasks.filter(t => isTaskDone(p.id, t.name, t.done)).length;
+    const pct = p.totalTasks ? Math.round(doneCnt/p.totalTasks*100) : 0;
+
+    // ── Left panel: project row ──
+    const lpr=document.createElement('div');
+    lpr.className='lp-row proj';
+    lpr.innerHTML=`
+      <span class="expand-btn ${isOpen?'open':''}">▶</span>
+      <div style="flex:1;overflow:hidden;margin-right:4px">
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.name}">${p.name}</div>
+        <div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div>
+      </div>
+      <span style="font-size:11px;color:#667;white-space:nowrap">${pct}%</span>`;
+    lpr.addEventListener('click',()=>{
+      if(expanded.has(p.id)) expanded.delete(p.id);
+      else expanded.add(p.id);
+      saveState(); render();
+    });
+    lpr.addEventListener('mouseenter',e=>showTip(e,p.name,[
+      ['לקוח',p.client||'—'],
+      ['מנהל',p.manager||'—'],
+      ['סוג',p.type||'—'],
+      ['סטטוס',p.status||'—'],
+      ['התקדמות',pct+'% ('+doneCnt+'/'+p.totalTasks+')'],
+      ['תחילה',p.startDate||p.receivedDate||'—'],
+      ['סיום',p.endDate||'—'],
+    ]));
+    lpr.addEventListener('mouseleave',hideTip);
+    lpRows.appendChild(lpr);
+
+    // ── Gantt: project bar ──
+    const gpr=document.createElement('div');
+    gpr.className='g-row proj';
+    gpr.style.width=W+'px';
+    const sd=pd(p.startDate), ed=pd(p.endDate);
+    if(sd && ed){
+      const left=dayOff(sd)*DW;
+      const width=Math.max((diff(sd,ed)+1)*DW, 6);
+      const cls=barCls(p.status, p.endDate);
+      const barEl=document.createElement('div');
+      barEl.className='bar '+cls;
+      barEl.style.cssText=`left:${left}px;width:${width}px`;
+      barEl.title=p.name;
+      barEl.addEventListener('mouseenter',e=>showTip(e,p.name,[
+        ['תחילה',fd(sd)],['סיום',fd(ed)],
+        ['ימים',diff(sd,ed)+1],['סטטוס',p.status||'—'],
+      ]));
+      barEl.addEventListener('mouseleave',hideTip);
+      gpr.appendChild(barEl);
+    }
+    gRows.appendChild(gpr);
+
+    // ── Task rows (if expanded) ──
+    if(isOpen){
+      p.tasks.forEach(t => {
+        const done=isTaskDone(p.id, t.name, t.done);
+
+        // Left panel task row
+        const tlr=document.createElement('div');
+        tlr.className='lp-row task';
+        tlr.innerHTML=`<div class="task-dot ${done?'done-dot':'pend-dot'}"></div>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</span>
+          <span style="font-size:10px;color:#889;margin-right:4px">${done?'✓':''}</span>`;
+        tlr.style.cursor='pointer';
+        tlr.addEventListener('click',()=>toggleTask(p.id, t.name, t.done));
+        tlr.addEventListener('mouseenter',e=>showTip(e,t.name,[
+          ['פרויקט',p.name],
+          ['CRM',t.crmName||'—'],
+          ['תחילה',t.startDate||'—'],
+          ['סיום',t.endDate||'—'],
+          ['סטטוס',t.status||'—'],
+          ['מצב',done?'✅ בוצע':'⏳ ממתין'],
+        ]));
+        tlr.addEventListener('mouseleave',hideTip);
+        lpRows.appendChild(tlr);
+
+        // Gantt task row
+        const gtr=document.createElement('div');
+        gtr.className='g-row task';
+        gtr.style.width=W+'px';
+        const ts=pd(t.startDate), te=pd(t.endDate);
+        const color=taskColor(done);
+        if(ts && te){
+          const left=dayOff(ts)*DW;
+          const width=Math.max((diff(ts,te)+1)*DW, 4);
+          const tb=document.createElement('div');
+          tb.className='bar';
+          tb.style.cssText=`left:${left}px;width:${width}px;background:${color};height:14px`;
+          tb.addEventListener('click',()=>toggleTask(p.id, t.name, t.done));
+          tb.addEventListener('mouseenter',e=>showTip(e,t.name,[
+            ['תחילה',fd(ts)],['סיום',fd(te)],
+            ['ימים',diff(ts,te)+1],['מצב',done?'✅ בוצע':'⏳ ממתין'],
+          ]));
+          tb.addEventListener('mouseleave',hideTip);
+          gtr.appendChild(tb);
+        } else {
+          // No dates - show diamond on project start
+          const projStart=pd(p.startDate)||pd(p.receivedDate);
+          if(projStart){
+            const dm=document.createElement('div');
+            dm.className='diamond';
+            dm.style.cssText=`left:${dayOff(projStart)*DW-5}px;background:${done?'#27ae60':'#ccc'}`;
+            dm.title=t.name+(done?' ✓':' (ללא תאריך)');
+            dm.addEventListener('click',()=>toggleTask(p.id, t.name, t.done));
+            gtr.appendChild(dm);
+          }
+        }
+        gRows.appendChild(gtr);
+      });
+    }
+  });
+
+  document.getElementById('b-proj').textContent=filtered.length+' פרויקטים';
+  const tt=filtered.reduce((s,p)=>s+p.totalTasks,0);
+  document.getElementById('b-tasks').textContent=tt+' משימות';
+}
+
+// ── Sync scroll ───────────────────────────────────────────────────────────────
+function syncScroll(){
+  const lp=document.getElementById('lp'), ga=document.getElementById('ga');
+  ga.addEventListener('scroll',()=>{ lp.scrollTop=ga.scrollTop; });
+  lp.addEventListener('scroll',()=>{ ga.scrollTop=lp.scrollTop; });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init(){
+  loadState();
+  document.getElementById('b-date').textContent='היום: '+TODAY.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  buildHeader();
+  buildGrid();
+  buildToday();
+  initFilters();
+  syncScroll();
+  render();
+  document.getElementById('gi').style.width=(TOTAL_DAYS*DW)+'px';
+  setTimeout(()=>{
+    const ga=document.getElementById('ga');
+    ga.scrollLeft=Math.max(0,dayOff(TODAY)*DW-350);
+  },100);
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
